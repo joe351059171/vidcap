@@ -6,7 +6,7 @@ PROGS     = vidcap
 CFLAGS += -Wall -g -O2 -std=c++11
 ifeq ($(AXIS_BUILDTYPE),host)
 PKGS    = rapp
-LDFLAGS += -lcapturehost
+LDFLAGS += -lcapturehost -ljpeg -lrapp
 else
 PKGS    = glib-2.0 axhttp axevent axparameter axstorage
 LDFLAGS += -lcapture -lrapp
