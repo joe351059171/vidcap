@@ -8,7 +8,7 @@
 #include <sys/time.h>
 #include <syslog.h>
 //#include "turbojpeg.h"
-#include <capture.h>
+
 #include <rapp/rapp.h>
 
 #ifdef DEBUG
@@ -52,8 +52,6 @@ void cropYUV420(char* source, int width, int height,
 int
 main(int argc, char** argv)
 {
-  media_stream *     stream;
-  media_frame *      frame;
   struct timeval     tv_start, tv_end;
   int                msec;
   int                i          = 1;
@@ -65,85 +63,45 @@ main(int argc, char** argv)
   unsigned char *rapp_buffer = NULL;
 
   if (argc < 3) {
-#if defined __i386
+
     /* The host version */
     fprintf(stderr,
-            "Usage: %s media_type media_props\n", argv[0]);
+            "Usage: %s original_image result_image\n", argv[0]);
     fprintf(stderr,
-            "Example: %s \"%s\"      \"resolution=2CIF&fps=15\"\n",
-            argv[0], IMAGE_JPEG);
-    fprintf(stderr,
-            "Example: %s \"%s\" \"resolution=352x288&sdk_format=Y800&fps=15\"\n",
-            argv[0], IMAGE_UNCOMPRESSED);
-    fprintf(stderr,
-            "Example: %s \"%s\" \"capture-cameraIP=192.168.0.90&capture-userpass=user:pass&sdk_format=Y800&resolution=2CIF&fps=15\"\n",
-            argv[0], IMAGE_UNCOMPRESSED);
-#else
-    fprintf(stderr, "Usage: %s media_type media_props [numframes]\n",
-            argv[0]);
-    fprintf(stderr, "Example: %s %s \"resolution=352x288&fps=15\" 100\n",
-            argv[0], IMAGE_JPEG);
-    fprintf(stderr,
-            "Example: %s %s \"resolution=160x120&sdk_format=Y800&fps=15\" 100\n",
-            argv[0], IMAGE_UNCOMPRESSED);
-#endif
+            "Example: %s %s %s\n",
+            argv[0], "test.yuv", "result.yuv");
 
     return 1;
-  }
-  /* is numframes specified ? */
-  if (argc >= 4) {
-    numframes = atoi(argv[3]);
-
-    /* Need at least 2 frames for the achived fps calculation */
-    if (numframes < 2) {
-      numframes = 2;
-    }
   }
 
   openlog("vidcap", LOG_PID | LOG_CONS, LOG_USER);
 
-  stream = capture_open_stream(argv[1], argv[2]);
-  if (stream == NULL) {
-    LOGERR("Failed to open stream\n");
-    closelog();
-    return EXIT_FAILURE;
-  }
-
   gettimeofday(&tv_start, NULL);
 
   /* print intital information */
-  frame = capture_get_frame(stream);
+  file = fopen(argv[1], "rb");
   sleep(1);
-  int width = (int)capture_frame_width(frame);
-  int height = (int)capture_frame_height(frame);
-  int size = (int)capture_frame_size(frame);
-  unsigned char* data = (unsigned char*)capture_frame_data(frame);
-
-  cropWidth = width;
-  cropHeight = height;
-  if(argc >= 9) {
-    cropX = atoi(argv[5]);
-    cropY = atoi(argv[6]);
-    cropWidth = atoi(argv[7]);
-    cropHeight = atoi(argv[8]);
-  }
-  LOGINFO("etting %d frames. resolution: %dx%d framesize: %d\n",
-          numframes,
+  int width = 1280;
+  int height = 720;
+  int size = width * height * 2;
+  unsigned char* data = (unsigned char*)malloc(size);
+  fread(data, 1, size, file);
+  LOGINFO("resolution: %dx%d framesize: %d\n",
           width,
           height,
           size);
-
-  file = fopen(argv[4], "wb");
+  fclose(file);
+  file = fopen(argv[2], "wb");
   if(file == NULL) {
     printf("file open failed!\n");
     return -1;
   }
-  int cropSize = cropWidth*cropHeight*3/2;
-  unsigned char* dest = (unsigned char*)malloc(cropSize);
+
+  unsigned char* dest = (unsigned char*)malloc(size);
   rapp_initialize();
-  rapp_buffer = (unsigned char*)rapp_malloc(cropWidth * cropHeight, 0);
-  memcpy(rapp_buffer, data, cropWidth * cropHeight);
-  memcpy(dest, data, width*height*3/2);
+  rapp_buffer = (unsigned char*)rapp_malloc(width * height, 0);
+  memcpy(rapp_buffer, data, width * height);
+  memcpy(dest, data, size);
   //cropYUV420(rapp_buffer, width, height, dest, cropX, cropY, cropWidth, cropHeight);
   /*
   tjhandle tjh = tjInitDecompress();
@@ -168,30 +126,13 @@ main(int argc, char** argv)
     printf("rapp_alignment : %d\n", rapp_alignment);
   }
 
-  fwrite(data, 1, cropHeight*cropWidth*2, file);
+  fwrite(dest, 1, size, file);
   fclose(file);
+  free(data);
   free(dest);
   rapp_free(rapp_buffer);
   //tjFree(jpegBuf);
-  capture_frame_free(frame);
 
-  while (i < numframes) {
-    frame = capture_get_frame(stream);
-    if (!frame) {
-      /* nothing to read, this is serious  */
-      fprintf(stderr, "Failed to read frame!");
-      syslog(LOG_CRIT, "Failed to read frame!\n");
-
-      return 1;
-    } else {
-      D(capture_time ts = capture_frame_timestamp(frame));
-      D(LOGINFO("timestamp: %" CAPTURE_TIME_FORMAT "\n", ts));
-
-      totalbytes += capture_frame_size(frame);
-      capture_frame_free(frame);
-      i++;
-    }
-  }
   gettimeofday(&tv_end, NULL);
 
   /* calculate fps */
@@ -204,7 +145,6 @@ main(int argc, char** argv)
           (float)(i / (msec / 1000.0f)),
           (float)(totalbytes / (msec * 1000.0f)));
 
-  capture_close_stream(stream);
   closelog();
 
   return EXIT_SUCCESS;
