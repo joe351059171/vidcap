@@ -1,4 +1,4 @@
-#define _GNU_SOURCE
+//#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -7,7 +7,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <syslog.h>
-#include "turbojpeg.h"
+//#include "turbojpeg.h"
 #include <capture.h>
 #include <rapp/rapp.h>
 
@@ -114,10 +114,10 @@ main(int argc, char** argv)
   /* print intital information */
   frame = capture_get_frame(stream);
   sleep(1);
-  size_t width = capture_frame_width(frame);
-  size_t height = capture_frame_height(frame);
-  size_t size = capture_frame_size(frame);
-  char* data = capture_frame_data(frame);
+  int width = (int)capture_frame_width(frame);
+  int height = (int)capture_frame_height(frame);
+  int size = (int)capture_frame_size(frame);
+  unsigned char* data = (unsigned char*)capture_frame_data(frame);
 
   cropWidth = width;
   cropHeight = height;
@@ -139,11 +139,13 @@ main(int argc, char** argv)
     return -1;
   }
   int cropSize = cropWidth*cropHeight*3/2;
-  char* dest = malloc(cropSize);
+  unsigned char* dest = (unsigned char*)malloc(cropSize);
   rapp_initialize();
-  rapp_buffer = rapp_malloc(cropWidth * cropHeight, 0);
-
+  rapp_buffer = (unsigned char*)rapp_malloc(cropWidth * cropHeight, 0);
+  memcpy(rapp_buffer, data, cropWidth * cropHeight);
+  memcpy(dest, data, width*height*3/2);
   //cropYUV420(rapp_buffer, width, height, dest, cropX, cropY, cropWidth, cropHeight);
+  /*
   tjhandle tjh = tjInitDecompress();
   if(tjh == NULL) {
     printf("tjInitCompress error '%s'\n", tjGetErrorStr());
@@ -158,15 +160,19 @@ main(int argc, char** argv)
     return -1;
   }
   printf("Decompress successed! %d\n", rapp_alignment);
-  int ret = rapp_thresh_gt_u8(rapp_buffer, cropHeight, dest, height, 640, 480, 100);
+  */
+
+  int ret = rapp_thresh_gt_u8(dest, width, rapp_buffer, width, width, height, 180);
   if(ret < 0) {
     printf("thresh error %s\n", rapp_error(ret));
+    printf("rapp_alignment : %d\n", rapp_alignment);
   }
-  fwrite(dest, 1, cropHeight*cropWidth, file);
+
+  fwrite(data, 1, cropHeight*cropWidth*2, file);
   fclose(file);
   free(dest);
   rapp_free(rapp_buffer);
-  tjFree(jpegBuf);
+  //tjFree(jpegBuf);
   capture_frame_free(frame);
 
   while (i < numframes) {
