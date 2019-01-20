@@ -126,9 +126,9 @@ main(int argc, char** argv)
   */
   int ret = 0;
   char* contour = (char*)malloc(1000);
-  ret = rapp_thresh_gt_u8(dest, width, rapp_buffer, width, width, height, 140);
+  ret = rapp_thresh_gt_u8(dest, width, rapp_buffer, width, width, height, 180);
   ret = rapp_pad_const_bin(dest,width,0,width,height,1,0);
-for(int i = 0;i < 800;i++) {//## number of contours: a few to 2948
+for(int i = 0;i < 10;i++) {//## number of contours: fewer than 2948
   unsigned int origin[2];
   unsigned int box[4];
   ret = rapp_contour_8conn_bin(origin,contour,1000,dest,width,width,height);
@@ -142,7 +142,7 @@ for(int i = 0;i < 800;i++) {//## number of contours: a few to 2948
     memcpy(dest1,dest,rapp_align(size));
   } 
 /*else {
-   fprintf(stderr,"******right!*******\nid:%d\npos:x:%d,y:%d\n",i,box[0],box[1]);
+   fprintf(stderr,"******right contour!*******\nid:%d\npos:x:%d,y:%d\n",i,box[0],box[1]);
    ret = rapp_bitblt_xor_bin(dest,width,0,dest1,width,0,width,height);
    memcpy(dest1,dest,rapp_align(size));
   }*/
@@ -166,19 +166,19 @@ for(int i = 0;i < 800;i++) {//## number of contours: a few to 2948
   }
   fwrite(dest2, 1, size, file);
   fclose(file);
-  printf("file free succeed\n");
+ // printf("file free succeed\n");
   free(data);
-  printf("data free succeed\n");
-  //rapp_free(dest);
-  printf("dest free succeed\n");
+ // printf("data free succeed\n");
+ // rapp_free(dest);
+ // printf("dest free succeed\n");
   rapp_free(dest1);
-  printf("dest1 free succeed\n");
+//  printf("dest1 free succeed\n");
   rapp_free(dest2);
-  printf("dest2 free succeed\n");
+ // printf("dest2 free succeed\n");
   free(contour);
-  printf("contour free succeed\n");
+ // printf("contour free succeed\n");
   rapp_free(rapp_buffer);
-  printf("rapp_buffer free succeed\n");
+ // printf("rapp_buffer free succeed\n");
   //tjFree(jpegBuf);
 
   gettimeofday(&tv_end, NULL);
