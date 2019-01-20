@@ -166,19 +166,19 @@ for(int i = 0;i < 10;i++) {//## number of contours: a few to 2948
   }
   fwrite(dest2, 1, size, file);
   fclose(file);
-  printf("file free succeed\n");
+  //printf("file free succeed\n");
   free(data);
-  printf("data free succeed\n");
+  //printf("data free succeed\n");
   //rapp_free(dest);
-  printf("dest free succeed\n");
+  //printf("dest free succeed\n");
   rapp_free(dest1);
-  printf("dest1 free succeed\n");
+  //printf("dest1 free succeed\n");
   rapp_free(dest2);
-  printf("dest2 free succeed\n");
+  //printf("dest2 free succeed\n");
   free(contour);
-  printf("contour free succeed\n");
+  //printf("contour free succeed\n");
   rapp_free(rapp_buffer);
-  printf("rapp_buffer free succeed\n");
+  //printf("rapp_buffer free succeed\n");
   //tjFree(jpegBuf);
 
   gettimeofday(&tv_end, NULL);
